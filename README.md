@@ -6,4 +6,4 @@ The user has the ability to mess around with lateral pull disturbances (magnitud
 
 In order to build and run the app. Simply run the simulation_exported.m file in the MATLAB programming environement. No additional toolboxes are required. The plan is to create a standalone executable that works without a MATLAB license.
 
-![Bike Simulation](https://i.imgur.com/VOr6l0M.gifv)
+![Bike Simulation](https://i.imgur.com/VOr6l0M.gif)
