@@ -38,6 +38,8 @@ classdef simulation_exported < matlab.apps.AppBase
         WheelRadiuscmEditField          matlab.ui.control.NumericEditField
         WheelbasecmEditFieldLabel       matlab.ui.control.Label
         WheelbasecmEditField            matlab.ui.control.NumericEditField
+        ControllerSwitchLabel           matlab.ui.control.Label
+        ControllerSwitch                matlab.ui.control.Switch
     end
 
     properties (Access = public)
@@ -546,6 +548,28 @@ classdef simulation_exported < matlab.apps.AppBase
             app.r=value/100;
             app.Gp=getPlantModel(app);
         end
+
+        % Value changed function: ControllerSwitch
+        function ControllerSwitchValueChanged(app, event)
+            value = app.ControllerSwitch.Value;
+            if (value=="Off")
+                app.K=zeros(1,5);
+                app.UITable.Data=app.K;
+            else
+                if(app.v<3)
+                    n=1;
+                elseif(app.v<4)
+                    n=2;
+                elseif(app.v<5)
+                    n=3;
+                else
+                    n=4;
+                end
+                Y=load('parametric.mat');
+                app.K=Y.final_model(n).K;
+                app.UITable.Data=app.K;
+            end
+        end
     end
 
     % Component initialization
@@ -749,6 +773,7 @@ classdef simulation_exported < matlab.apps.AppBase
             app.AzimuthSlider.Limits = [-90 90];
             app.AzimuthSlider.ValueChangingFcn = createCallbackFcn(app, @AzimuthSliderValueChanging, true);
             app.AzimuthSlider.Position = [706 204 111 3];
+            app.AzimuthSlider.Value = 60;
 
             % Create ElevationSliderLabel
             app.ElevationSliderLabel = uilabel(app.BicycleRiderSimulationUIFigure);
@@ -761,6 +786,7 @@ classdef simulation_exported < matlab.apps.AppBase
             app.ElevationSlider.Limits = [-90 90];
             app.ElevationSlider.ValueChangingFcn = createCallbackFcn(app, @ElevationSliderValueChanging, true);
             app.ElevationSlider.Position = [706 147 111 3];
+            app.ElevationSlider.Value = 30;
 
             % Create WheelRadiuscmEditFieldLabel
             app.WheelRadiuscmEditFieldLabel = uilabel(app.BicycleRiderSimulationUIFigure);
@@ -785,6 +811,18 @@ classdef simulation_exported < matlab.apps.AppBase
             app.WheelbasecmEditField.ValueChangedFcn = createCallbackFcn(app, @WheelbasecmEditFieldValueChanged, true);
             app.WheelbasecmEditField.Position = [491 75 100 22];
             app.WheelbasecmEditField.Value = 103;
+
+            % Create ControllerSwitchLabel
+            app.ControllerSwitchLabel = uilabel(app.BicycleRiderSimulationUIFigure);
+            app.ControllerSwitchLabel.HorizontalAlignment = 'center';
+            app.ControllerSwitchLabel.Position = [405 36 58 22];
+            app.ControllerSwitchLabel.Text = 'Controller';
+
+            % Create ControllerSwitch
+            app.ControllerSwitch = uiswitch(app.BicycleRiderSimulationUIFigure, 'slider');
+            app.ControllerSwitch.ValueChangedFcn = createCallbackFcn(app, @ControllerSwitchValueChanged, true);
+            app.ControllerSwitch.Position = [500 42 22 10];
+            app.ControllerSwitch.Value = 'On';
 
             % Show the figure after all components are created
             app.BicycleRiderSimulationUIFigure.Visible = 'on';
