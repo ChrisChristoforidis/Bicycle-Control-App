@@ -69,8 +69,8 @@ classdef simulation_exported < matlab.apps.AppBase
         camera='1';        % camera state variable
         state;             % state after integration
         t;                 % time 
-        subplot_flag=false;% flag for signals  display status
-        bike_plot_flag=true;% flag for animation activation status
+        subplot_flag;      % flag for signals  display status
+        bike_plot_flag;    % flag for animation activation status
         Trider=0;          % Rider torque
         torque_line;steer_line;roll_line;path_line; % animated lines for signal visualization
         p;rods;            % plot variables for bike segments
@@ -374,12 +374,18 @@ classdef simulation_exported < matlab.apps.AppBase
              app.r=0.6858/2;
              app.dt=0.01;
              app.t=0;
+             app.subplot_flag=false;
+             app.bike_plot_flag=true;
              app.roll.Visible='off';
              app.steer.Visible='off';
              app.torque.Visible='off';
              app.roll_line=animatedline(app.roll,'Color','b');
              app.steer_line=animatedline(app.steer,'Color','b');
              app.torque_line=animatedline(app.torque,'Color','b');
+             app.roll.cla;
+             app.steer.cla;
+             app.torque.cla;
+             app.SignalsSwitch.Value='Off';
              app.steer.XGrid="on";
              app.steer.YGrid="on";
              app.torque.XGrid="on";
