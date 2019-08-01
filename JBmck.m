@@ -136,3 +136,8 @@ K2(1,1)=0;
 K2(1,2)=-cos(lambda)/cw*(St+mt*cmt(2));
 K2(2,1)=0;
 K2(2,2)=cos(lambda)/cw*(sin(lambda)*Sf+nu);
+% 
+%   M0
+%   C1
+%   K0
+%   K2
