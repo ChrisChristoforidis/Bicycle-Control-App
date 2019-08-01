@@ -40,13 +40,14 @@ classdef simulation_exported < matlab.apps.AppBase
         WheelbasecmEditField            matlab.ui.control.NumericEditField
         ControllerSwitchLabel           matlab.ui.control.Label
         ControllerSwitch                matlab.ui.control.Switch
+        ResetButton                     matlab.ui.control.Button
     end
 
     properties (Access = public)
         fork_length=0.75;  % length from front wheel center to the midpoint of the handlebars
-        trail_angle=pi/10; % steer axis tilt
-        wheelbase=1.03;    % distance between wheel centers
-        r=0.6858/2;        % radius of wheels
+        trail_angle;       % steer axis tilt
+        wheelbase;         % distance between wheel centers
+        r;                 % radius of wheels
         delta=0;           % steer angle
         psi=0;             % yaw angle
         phi=0;             % roll angle
@@ -54,27 +55,27 @@ classdef simulation_exported < matlab.apps.AppBase
         e3=[0;0;1];        % z - unit vector
         e2=[0;1;0];        % y - unit vector
         e1=[1;0;0];        % x - unit vector
-        theta;             % angle for ploting the circular wheels
+        theta;             % angle for ploting circle points
         v;                 % forward velocity
         Gp;                % eom of bicycle with neuromuscular dynamics
         K;                 % controller gains
-        freeze=0;
-        dt;
-        noise_flag;
-        duration;
-        step;
-        w=0;
-        magnitude;
-        camera='1';
-        state;
-        t;
-        subplot_flag=false;bike_plot_flag=true;
-        Trider=0;
-        torque_line;steer_line;roll_line;path_line;
-        p;rods;
-        omegac= 2 * pi * 2.17;
-        trail=0.0665;
-        azimuth=60;elevation=30;
+        freeze=0;          % pause flag 
+        dt;                % time step
+        noise_flag;        % white noise activation flag;
+        duration;          % duration of impulseperturbation;
+        step;              % counter for perturbation duration
+        w=0;               % variable for perturbation magnitude
+        magnitude;         % impulse max value / white noise variance
+        camera='1';        % camera state variable
+        state;             % state after integration
+        t;                 % time 
+        subplot_flag=false;% flag for signals  display status
+        bike_plot_flag=true;% flag for animation activation status
+        Trider=0;          % Rider torque
+        torque_line;steer_line;roll_line;path_line; % animated lines for signal visualization
+        p;rods;            % plot variables for bike segments
+        omegac;            % resonance frequency of neuromuscular dynamics
+        azimuth=60;elevation=30; % camera angles
     end
     methods (Access = private)
             
@@ -301,7 +302,7 @@ classdef simulation_exported < matlab.apps.AppBase
             Dfrontwheel=app.r*2;
             wheelbase=app.wheelbase;
             lambda=app.trail_angle;
-            trail=app.trail;
+            trail= (Dfrontwheel/2*sin(lambda)-0.044)/cos(lambda);
             JBmck %get matrices M0 C1 K0 K1 that fully desicribe the bicycle's equations of motion
             a = -fliplr(eye(2)) + eye(2);
             M0 = a .* M0;
@@ -318,7 +319,7 @@ classdef simulation_exported < matlab.apps.AppBase
             A = [-M0 \ C1 * app.v, -M0 \ (K0 + K2 * app.v^2); I, O];
             B = [M0 \ [I, Hfw]; zeros(2, 3)];
             
-            E=[0 app.trail*cos(app.trail_angle)/app.wheelbase 0 app.trail*cos(app.trail_angle)/app.wheelbase];
+            E=[0 trail*cos(app.trail_angle)/app.wheelbase 0 trail*cos(app.trail_angle)/app.wheelbase];
             NA=[A;E];
             NA=[NA zeros(5,1)];
             NB=[ B ;zeros(1,size(B,2))];
@@ -364,9 +365,13 @@ classdef simulation_exported < matlab.apps.AppBase
         function constructor(app)
              app.theta=linspace(0,2*pi,60);%rad
              app.v=9.3/3.6;
+             app.omegac= 2 * pi * 2.17;
+             app.trail_angle=deg2rad(90-73);
              app.duration=20;
              app.magnitude=350;
              app.step=app.duration;
+             app.wheelbase=1.03;
+             app.r=0.6858/2;
              app.dt=0.01;
              app.t=0;
              app.roll.Visible='off';
@@ -381,9 +386,9 @@ classdef simulation_exported < matlab.apps.AppBase
              app.torque.YGrid="on";
              app.roll.XGrid="on";
              app.roll.YGrid="on";
-             app.steer.YLabel.String="\delta (rad)";
+             app.steer.YLabel.String="\delta (deg)";
              app.torque.YLabel.String="T_{\delta} (Nm)";   
-             app.roll.YLabel.String="\phi (rad)";   
+             app.roll.YLabel.String="\phi (deg)";   
              Y=load('parametric.mat');
              app.K=Y.final_model(1).K;
              app.UITable.Data=app.K;
@@ -398,8 +403,10 @@ classdef simulation_exported < matlab.apps.AppBase
         % Button pushed function: PauseButton
         function PauseButtonPushed(app, event)
         if(app.freeze==0)
+             app.PauseButton.Text = 'Resume';
              app.freeze=1;            
         else
+            app.PauseButton.Text = 'Pause';
             app.freeze=0;
             updateChild(app)           
         end
@@ -483,12 +490,15 @@ classdef simulation_exported < matlab.apps.AppBase
             app.K=Y.final_model(n).K;
             app.UITable.Data=app.K;
             app.Gp=getPlantModel(app);
+            app.ControllerSwitch.Value = 'On';
         end
 
         % Value changing function: IntegrationTimeStepSpinner
         function IntegrationTimeStepSpinnerValueChanging(app, event)
             changingValue = event.Value;
+            x=app.duration*app.dt;
             app.dt=changingValue;
+            app.duration=x/app.dt;
         end
 
         % Value changed function: Switch
@@ -570,6 +580,11 @@ classdef simulation_exported < matlab.apps.AppBase
                 app.UITable.Data=app.K;
             end
         end
+
+        % Button pushed function: ResetButton
+        function ResetButtonPushed(app, event)
+            constructor(app)
+        end
     end
 
     % Component initialization
@@ -595,7 +610,7 @@ classdef simulation_exported < matlab.apps.AppBase
             % Create PauseButton
             app.PauseButton = uibutton(app.BicycleRiderSimulationUIFigure, 'push');
             app.PauseButton.ButtonPushedFcn = createCallbackFcn(app, @PauseButtonPushed, true);
-            app.PauseButton.Position = [864 619 100 22];
+            app.PauseButton.Position = [706 57 100 22];
             app.PauseButton.Text = 'Pause';
 
             % Create ImpulseButton
@@ -750,6 +765,7 @@ classdef simulation_exported < matlab.apps.AppBase
             app.SteerAxisTiltdegSlider.Limits = [-30 30];
             app.SteerAxisTiltdegSlider.ValueChangingFcn = createCallbackFcn(app, @SteerAxisTiltdegSliderValueChanging, true);
             app.SteerAxisTiltdegSlider.Position = [231 46 119 3];
+            app.SteerAxisTiltdegSlider.Value = 17;
 
             % Create WhiteNoiseSwitchLabel
             app.WhiteNoiseSwitchLabel = uilabel(app.BicycleRiderSimulationUIFigure);
@@ -823,6 +839,12 @@ classdef simulation_exported < matlab.apps.AppBase
             app.ControllerSwitch.ValueChangedFcn = createCallbackFcn(app, @ControllerSwitchValueChanged, true);
             app.ControllerSwitch.Position = [500 42 22 10];
             app.ControllerSwitch.Value = 'On';
+
+            % Create ResetButton
+            app.ResetButton = uibutton(app.BicycleRiderSimulationUIFigure, 'push');
+            app.ResetButton.ButtonPushedFcn = createCallbackFcn(app, @ResetButtonPushed, true);
+            app.ResetButton.Position = [706 27 100 22];
+            app.ResetButton.Text = 'Reset';
 
             % Show the figure after all components are created
             app.BicycleRiderSimulationUIFigure.Visible = 'on';
