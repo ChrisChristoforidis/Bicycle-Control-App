@@ -319,7 +319,7 @@ classdef simulation_exported < matlab.apps.AppBase
             A = [-M0 \ C1 * app.v, -M0 \ (K0 + K2 * app.v^2); I, O];
             B = [M0 \ [I, Hfw]; zeros(2, 3)];
             
-            E=[0 trail*cos(app.trail_angle)/app.wheelbase 0 trail*cos(app.trail_angle)/app.wheelbase];
+            E=[0 trail*cos(app.trail_angle)/app.wheelbase 0 app.v*cos(app.trail_angle)/app.wheelbase];
             NA=[A;E];
             NA=[NA zeros(5,1)];
             NB=[ B ;zeros(1,size(B,2))];
@@ -395,8 +395,8 @@ classdef simulation_exported < matlab.apps.AppBase
              app.steer.YLabel.String="\delta (deg)";
              app.torque.YLabel.String="T_{\delta} (Nm)";   
              app.roll.YLabel.String="\phi (deg)";   
-             Y=load('parametric.mat');
-             app.K=Y.final_model(1).K;
+             Y=load('gains_6param_steer.mat');
+             app.K=Y.Gains(1,:);
              app.UITable.Data=app.K;
              app.Gp=getPlantModel(app);
              app.xp=0;app.yp=0;app.psi=0;app.phi=0;app.delta=0;
@@ -492,8 +492,8 @@ classdef simulation_exported < matlab.apps.AppBase
             else
                 n=4;
             end
-            Y=load('parametric.mat');
-            app.K=Y.final_model(n).K;
+            Y=load('gains_6param_steer.mat');
+            app.K=Y.Gains(n,:);
             app.UITable.Data=app.K;
             app.Gp=getPlantModel(app);
             app.ControllerSwitch.Value = 'On';
@@ -569,7 +569,7 @@ classdef simulation_exported < matlab.apps.AppBase
         function ControllerSwitchValueChanged(app, event)
             value = app.ControllerSwitch.Value;
             if (value=="Off")
-                app.K=zeros(1,5);
+                app.K=zeros(1,6);
                 app.UITable.Data=app.K;
             else
                 if(app.v<3)
@@ -581,8 +581,8 @@ classdef simulation_exported < matlab.apps.AppBase
                 else
                     n=4;
                 end
-                Y=load('parametric.mat');
-                app.K=Y.final_model(n).K;
+    Y=load('gains_6param_steer.mat');
+                app.K=Y.Gains(n).K;
                 app.UITable.Data=app.K;
             end
         end
@@ -603,7 +603,7 @@ classdef simulation_exported < matlab.apps.AppBase
             app.BicycleRiderSimulationUIFigure = uifigure('Visible', 'off');
             app.BicycleRiderSimulationUIFigure.Color = [0.9412 0.9412 0.9412];
             app.BicycleRiderSimulationUIFigure.Colormap = [0.2431 0.149 0.6588;0.251 0.1647 0.7059;0.2588 0.1804 0.7529;0.2627 0.1961 0.7961;0.2706 0.2157 0.8353;0.2745 0.2353 0.8706;0.2784 0.2549 0.898;0.2784 0.2784 0.9216;0.2824 0.302 0.9412;0.2824 0.3216 0.9569;0.2784 0.3451 0.9725;0.2745 0.3686 0.9843;0.2706 0.3882 0.9922;0.2588 0.4118 0.9961;0.2431 0.4353 1;0.2196 0.4588 0.9961;0.1961 0.4863 0.9882;0.1843 0.5059 0.9804;0.1804 0.5294 0.9686;0.1765 0.549 0.9529;0.1686 0.5686 0.9373;0.1529 0.5922 0.9216;0.1451 0.6078 0.9098;0.1373 0.6275 0.898;0.1255 0.6471 0.8902;0.1098 0.6627 0.8745;0.0941 0.6784 0.8588;0.0706 0.6941 0.8392;0.0314 0.7098 0.8157;0.0039 0.7216 0.7922;0.0078 0.7294 0.7647;0.0431 0.7412 0.7412;0.098 0.749 0.7137;0.1412 0.7569 0.6824;0.1725 0.7686 0.6549;0.1922 0.7765 0.6235;0.2157 0.7843 0.5922;0.2471 0.7922 0.5569;0.2902 0.7961 0.5176;0.3412 0.8 0.4784;0.3922 0.8039 0.4353;0.4471 0.8039 0.3922;0.5059 0.8 0.349;0.5608 0.7961 0.3059;0.6157 0.7882 0.2627;0.6706 0.7804 0.2235;0.7255 0.7686 0.1922;0.7725 0.7608 0.1647;0.8196 0.749 0.1529;0.8627 0.7412 0.1608;0.902 0.7333 0.1765;0.9412 0.7294 0.2118;0.9725 0.7294 0.2392;0.9961 0.7451 0.2353;0.9961 0.7647 0.2196;0.9961 0.7882 0.2039;0.9882 0.8118 0.1882;0.9804 0.8392 0.1765;0.9686 0.8627 0.1647;0.9608 0.8902 0.1529;0.9608 0.9137 0.1412;0.9647 0.9373 0.1255;0.9686 0.9608 0.1059;0.9765 0.9843 0.0824];
-            app.BicycleRiderSimulationUIFigure.Position = [100 100 985 652];
+            app.BicycleRiderSimulationUIFigure.Position = [100 100 993 661];
             app.BicycleRiderSimulationUIFigure.Name = 'Bicycle Rider Simulation';
 
             % Create UIAxes
@@ -611,24 +611,24 @@ classdef simulation_exported < matlab.apps.AppBase
             title(app.UIAxes, '')
             xlabel(app.UIAxes, 'X')
             ylabel(app.UIAxes, 'Y')
-            app.UIAxes.Position = [47 257 421 353];
+            app.UIAxes.Position = [47 266 421 353];
 
             % Create PauseButton
             app.PauseButton = uibutton(app.BicycleRiderSimulationUIFigure, 'push');
             app.PauseButton.ButtonPushedFcn = createCallbackFcn(app, @PauseButtonPushed, true);
-            app.PauseButton.Position = [706 57 100 22];
+            app.PauseButton.Position = [817 56 100 22];
             app.PauseButton.Text = 'Pause';
 
             % Create ImpulseButton
             app.ImpulseButton = uibutton(app.BicycleRiderSimulationUIFigure, 'push');
             app.ImpulseButton.ButtonPushedFcn = createCallbackFcn(app, @ImpulseButtonPushed, true);
-            app.ImpulseButton.Position = [47 129 100 22];
+            app.ImpulseButton.Position = [47 138 100 22];
             app.ImpulseButton.Text = 'Impulse';
 
             % Create CameraViewDropDownLabel
             app.CameraViewDropDownLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.CameraViewDropDownLabel.HorizontalAlignment = 'right';
-            app.CameraViewDropDownLabel.Position = [692 257 77 22];
+            app.CameraViewDropDownLabel.Position = [803 256 77 22];
             app.CameraViewDropDownLabel.Text = 'Camera View';
 
             % Create CameraViewDropDown
@@ -636,7 +636,7 @@ classdef simulation_exported < matlab.apps.AppBase
             app.CameraViewDropDown.Items = {'3D', 'Top Down', 'Back'};
             app.CameraViewDropDown.ItemsData = {'1', '2', '3'};
             app.CameraViewDropDown.ValueChangedFcn = createCallbackFcn(app, @CameraViewDropDownValueChanged, true);
-            app.CameraViewDropDown.Position = [681 226 100 22];
+            app.CameraViewDropDown.Position = [792 225 100 22];
             app.CameraViewDropDown.Value = '1';
 
             % Create roll
@@ -644,212 +644,212 @@ classdef simulation_exported < matlab.apps.AppBase
             title(app.roll, '')
             xlabel(app.roll, '')
             ylabel(app.roll, '')
-            app.roll.Position = [543 391 376 97];
+            app.roll.Position = [543 400 376 97];
 
             % Create torque
             app.torque = uiaxes(app.BicycleRiderSimulationUIFigure);
             title(app.torque, '')
             xlabel(app.torque, '')
             ylabel(app.torque, '')
-            app.torque.Position = [543 487 376 103];
+            app.torque.Position = [543 496 376 103];
 
             % Create steer
             app.steer = uiaxes(app.BicycleRiderSimulationUIFigure);
             title(app.steer, '')
             xlabel(app.steer, 'Time (s)')
             ylabel(app.steer, '')
-            app.steer.Position = [543 295 376 97];
+            app.steer.Position = [543 304 376 97];
 
             % Create SignalsSwitchLabel
             app.SignalsSwitchLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.SignalsSwitchLabel.HorizontalAlignment = 'center';
             app.SignalsSwitchLabel.FontSize = 14;
             app.SignalsSwitchLabel.FontWeight = 'bold';
-            app.SignalsSwitchLabel.Position = [664 609 55 22];
+            app.SignalsSwitchLabel.Position = [664 618 55 22];
             app.SignalsSwitchLabel.Text = 'Signals';
 
             % Create SignalsSwitch
             app.SignalsSwitch = uiswitch(app.BicycleRiderSimulationUIFigure, 'slider');
             app.SignalsSwitch.ValueChangedFcn = createCallbackFcn(app, @SignalsSwitchValueChanged, true);
-            app.SignalsSwitch.Position = [753 615 26 11];
+            app.SignalsSwitch.Position = [753 624 26 11];
 
             % Create MagnitudeNEditFieldLabel
             app.MagnitudeNEditFieldLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.MagnitudeNEditFieldLabel.HorizontalAlignment = 'right';
-            app.MagnitudeNEditFieldLabel.Position = [27 195 82 22];
+            app.MagnitudeNEditFieldLabel.Position = [27 204 82 22];
             app.MagnitudeNEditFieldLabel.Text = 'Magnitude (N)';
 
             % Create MagnitudeNEditField
             app.MagnitudeNEditField = uieditfield(app.BicycleRiderSimulationUIFigure, 'numeric');
             app.MagnitudeNEditField.ValueChangedFcn = createCallbackFcn(app, @MagnitudeNEditFieldValueChanged, true);
-            app.MagnitudeNEditField.Position = [116 195 41 22];
+            app.MagnitudeNEditField.Position = [116 204 41 22];
             app.MagnitudeNEditField.Value = 350;
 
             % Create DisturbanceLabel
             app.DisturbanceLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.DisturbanceLabel.FontSize = 14;
             app.DisturbanceLabel.FontWeight = 'bold';
-            app.DisturbanceLabel.Position = [61 226 87 22];
+            app.DisturbanceLabel.Position = [61 235 87 22];
             app.DisturbanceLabel.Text = 'Disturbance';
 
             % Create DurationmsEditFieldLabel
             app.DurationmsEditFieldLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.DurationmsEditFieldLabel.HorizontalAlignment = 'right';
-            app.DurationmsEditFieldLabel.Position = [31 160 78 22];
+            app.DurationmsEditFieldLabel.Position = [31 169 78 22];
             app.DurationmsEditFieldLabel.Text = 'Duration (ms)';
 
             % Create DurationmsEditField
             app.DurationmsEditField = uieditfield(app.BicycleRiderSimulationUIFigure, 'numeric');
             app.DurationmsEditField.ValueChangedFcn = createCallbackFcn(app, @DurationmsEditFieldValueChanged, true);
-            app.DurationmsEditField.Position = [116 160 41 22];
+            app.DurationmsEditField.Position = [116 169 41 22];
             app.DurationmsEditField.Value = 200;
 
             % Create ForwardSpeedkmhDropDownLabel
             app.ForwardSpeedkmhDropDownLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.ForwardSpeedkmhDropDownLabel.HorizontalAlignment = 'right';
-            app.ForwardSpeedkmhDropDownLabel.Position = [217 195 125 22];
+            app.ForwardSpeedkmhDropDownLabel.Position = [327 204 125 22];
             app.ForwardSpeedkmhDropDownLabel.Text = 'Forward Speed (km/h)';
 
             % Create ForwardSpeedkmhDropDown
             app.ForwardSpeedkmhDropDown = uidropdown(app.BicycleRiderSimulationUIFigure);
             app.ForwardSpeedkmhDropDown.Items = {'9', '13', '16', '20'};
             app.ForwardSpeedkmhDropDown.ValueChangedFcn = createCallbackFcn(app, @ForwardSpeedkmhDropDownValueChanged, true);
-            app.ForwardSpeedkmhDropDown.Position = [357 195 100 22];
+            app.ForwardSpeedkmhDropDown.Position = [467 204 100 22];
             app.ForwardSpeedkmhDropDown.Value = '9';
 
             % Create UITable
             app.UITable = uitable(app.BicycleRiderSimulationUIFigure);
-            app.UITable.ColumnName = {'K1'; 'K2 '; 'K3 '; 'K4'; 'K5'};
+            app.UITable.ColumnName = {'K1'; 'K2'; 'K3'; 'K4'; 'K5'; 'K6'};
             app.UITable.ColumnWidth = {'auto'};
             app.UITable.RowName = {};
             app.UITable.ColumnEditable = false;
             app.UITable.FontWeight = 'bold';
             app.UITable.FontSize = 10;
-            app.UITable.Position = [213 140 380 47];
+            app.UITable.Position = [217 138 452 58];
 
             % Create ModelParametersLabel
             app.ModelParametersLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.ModelParametersLabel.FontSize = 14;
             app.ModelParametersLabel.FontWeight = 'bold';
-            app.ModelParametersLabel.Position = [293 226 126 22];
+            app.ModelParametersLabel.Position = [403 235 126 22];
             app.ModelParametersLabel.Text = 'Model Parameters';
 
             % Create IntegrationTimeStepSpinnerLabel
             app.IntegrationTimeStepSpinnerLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.IntegrationTimeStepSpinnerLabel.HorizontalAlignment = 'right';
-            app.IntegrationTimeStepSpinnerLabel.Position = [230 108 119 22];
+            app.IntegrationTimeStepSpinnerLabel.Position = [275 110 119 22];
             app.IntegrationTimeStepSpinnerLabel.Text = 'Integration Time Step';
 
             % Create IntegrationTimeStepSpinner
             app.IntegrationTimeStepSpinner = uispinner(app.BicycleRiderSimulationUIFigure);
             app.IntegrationTimeStepSpinner.Step = 0.001;
             app.IntegrationTimeStepSpinner.ValueChangingFcn = createCallbackFcn(app, @IntegrationTimeStepSpinnerValueChanging, true);
-            app.IntegrationTimeStepSpinner.Position = [240 87 100 22];
+            app.IntegrationTimeStepSpinner.Position = [285 89 100 22];
             app.IntegrationTimeStepSpinner.Value = 0.01;
 
             % Create Switch
             app.Switch = uiswitch(app.BicycleRiderSimulationUIFigure, 'slider');
             app.Switch.ValueChangedFcn = createCallbackFcn(app, @SwitchValueChanged, true);
-            app.Switch.Position = [321 614 28 12];
+            app.Switch.Position = [321 623 28 12];
             app.Switch.Value = 'On';
 
             % Create BicycleAnimationLabel
             app.BicycleAnimationLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.BicycleAnimationLabel.FontSize = 14;
             app.BicycleAnimationLabel.FontWeight = 'bold';
-            app.BicycleAnimationLabel.Position = [165 609 127 22];
+            app.BicycleAnimationLabel.Position = [165 618 127 22];
             app.BicycleAnimationLabel.Text = 'Bicycle Animation';
 
             % Create SteerAxisTiltdegSliderLabel
             app.SteerAxisTiltdegSliderLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.SteerAxisTiltdegSliderLabel.HorizontalAlignment = 'right';
-            app.SteerAxisTiltdegSliderLabel.Position = [231 54 111 22];
+            app.SteerAxisTiltdegSliderLabel.Position = [276 56 111 22];
             app.SteerAxisTiltdegSliderLabel.Text = 'Steer Axis Tilt (deg)';
 
             % Create SteerAxisTiltdegSlider
             app.SteerAxisTiltdegSlider = uislider(app.BicycleRiderSimulationUIFigure);
             app.SteerAxisTiltdegSlider.Limits = [-30 30];
             app.SteerAxisTiltdegSlider.ValueChangingFcn = createCallbackFcn(app, @SteerAxisTiltdegSliderValueChanging, true);
-            app.SteerAxisTiltdegSlider.Position = [231 46 119 3];
+            app.SteerAxisTiltdegSlider.Position = [276 48 119 3];
             app.SteerAxisTiltdegSlider.Value = 17;
 
             % Create WhiteNoiseSwitchLabel
             app.WhiteNoiseSwitchLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.WhiteNoiseSwitchLabel.HorizontalAlignment = 'center';
-            app.WhiteNoiseSwitchLabel.Position = [27 98 70 22];
+            app.WhiteNoiseSwitchLabel.Position = [27 107 70 22];
             app.WhiteNoiseSwitchLabel.Text = 'White Noise';
 
             % Create WhiteNoiseSwitch
             app.WhiteNoiseSwitch = uiswitch(app.BicycleRiderSimulationUIFigure, 'slider');
             app.WhiteNoiseSwitch.ValueChangedFcn = createCallbackFcn(app, @WhiteNoiseSwitchValueChanged, true);
-            app.WhiteNoiseSwitch.Position = [134 100 41 18];
+            app.WhiteNoiseSwitch.Position = [134 109 41 18];
 
             % Create AzimuthSliderLabel
             app.AzimuthSliderLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.AzimuthSliderLabel.HorizontalAlignment = 'right';
-            app.AzimuthSliderLabel.Position = [636 195 49 22];
+            app.AzimuthSliderLabel.Position = [747 194 49 22];
             app.AzimuthSliderLabel.Text = 'Azimuth';
 
             % Create AzimuthSlider
             app.AzimuthSlider = uislider(app.BicycleRiderSimulationUIFigure);
             app.AzimuthSlider.Limits = [-90 90];
             app.AzimuthSlider.ValueChangingFcn = createCallbackFcn(app, @AzimuthSliderValueChanging, true);
-            app.AzimuthSlider.Position = [706 204 111 3];
+            app.AzimuthSlider.Position = [817 203 111 3];
             app.AzimuthSlider.Value = 60;
 
             % Create ElevationSliderLabel
             app.ElevationSliderLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.ElevationSliderLabel.HorizontalAlignment = 'right';
-            app.ElevationSliderLabel.Position = [636 138 55 22];
+            app.ElevationSliderLabel.Position = [747 137 55 22];
             app.ElevationSliderLabel.Text = 'Elevation';
 
             % Create ElevationSlider
             app.ElevationSlider = uislider(app.BicycleRiderSimulationUIFigure);
             app.ElevationSlider.Limits = [-90 90];
             app.ElevationSlider.ValueChangingFcn = createCallbackFcn(app, @ElevationSliderValueChanging, true);
-            app.ElevationSlider.Position = [706 147 111 3];
+            app.ElevationSlider.Position = [817 146 111 3];
             app.ElevationSlider.Value = 30;
 
             % Create WheelRadiuscmEditFieldLabel
             app.WheelRadiuscmEditFieldLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.WheelRadiuscmEditFieldLabel.HorizontalAlignment = 'right';
-            app.WheelRadiuscmEditFieldLabel.Position = [369 108 107 22];
+            app.WheelRadiuscmEditFieldLabel.Position = [414 110 107 22];
             app.WheelRadiuscmEditFieldLabel.Text = 'Wheel Radius (cm)';
 
             % Create WheelRadiuscmEditField
             app.WheelRadiuscmEditField = uieditfield(app.BicycleRiderSimulationUIFigure, 'numeric');
             app.WheelRadiuscmEditField.ValueChangedFcn = createCallbackFcn(app, @WheelRadiuscmEditFieldValueChanged, true);
-            app.WheelRadiuscmEditField.Position = [491 108 100 22];
+            app.WheelRadiuscmEditField.Position = [536 110 100 22];
             app.WheelRadiuscmEditField.Value = 34.29;
 
             % Create WheelbasecmEditFieldLabel
             app.WheelbasecmEditFieldLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.WheelbasecmEditFieldLabel.HorizontalAlignment = 'right';
-            app.WheelbasecmEditFieldLabel.Position = [383 75 93 22];
+            app.WheelbasecmEditFieldLabel.Position = [428 77 93 22];
             app.WheelbasecmEditFieldLabel.Text = 'Wheelbase (cm)';
 
             % Create WheelbasecmEditField
             app.WheelbasecmEditField = uieditfield(app.BicycleRiderSimulationUIFigure, 'numeric');
             app.WheelbasecmEditField.ValueChangedFcn = createCallbackFcn(app, @WheelbasecmEditFieldValueChanged, true);
-            app.WheelbasecmEditField.Position = [491 75 100 22];
+            app.WheelbasecmEditField.Position = [536 77 100 22];
             app.WheelbasecmEditField.Value = 103;
 
             % Create ControllerSwitchLabel
             app.ControllerSwitchLabel = uilabel(app.BicycleRiderSimulationUIFigure);
             app.ControllerSwitchLabel.HorizontalAlignment = 'center';
-            app.ControllerSwitchLabel.Position = [405 36 58 22];
+            app.ControllerSwitchLabel.Position = [450 38 58 22];
             app.ControllerSwitchLabel.Text = 'Controller';
 
             % Create ControllerSwitch
             app.ControllerSwitch = uiswitch(app.BicycleRiderSimulationUIFigure, 'slider');
             app.ControllerSwitch.ValueChangedFcn = createCallbackFcn(app, @ControllerSwitchValueChanged, true);
-            app.ControllerSwitch.Position = [500 42 22 10];
+            app.ControllerSwitch.Position = [545 44 22 10];
             app.ControllerSwitch.Value = 'On';
 
             % Create ResetButton
             app.ResetButton = uibutton(app.BicycleRiderSimulationUIFigure, 'push');
             app.ResetButton.ButtonPushedFcn = createCallbackFcn(app, @ResetButtonPushed, true);
-            app.ResetButton.Position = [706 27 100 22];
+            app.ResetButton.Position = [817 26 100 22];
             app.ResetButton.Text = 'Reset';
 
             % Show the figure after all components are created
