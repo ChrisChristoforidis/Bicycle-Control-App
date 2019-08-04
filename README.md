@@ -5,5 +5,4 @@ This app is used for simulating and animating the balance behaviour of a bicycle
 The user has the ability to mess around with lateral pull disturbances (magnitude and duration) and see how the rider would react. Disturbance options include white noise and impulse. The app also has the ability to adapt in online changes of bicycle design parameters such as its wheelbase (distance between wheel centers) and wheel radius. 
 
 In order to build and run the app. Simply run the simulation_exported.m file in the MATLAB programming environement. No additional toolboxes are required. The plan is to create a standalone executable that works without a MATLAB license.
-
-![Bike Simulation](https://i.imgur.com/VOr6l0M.gif)
+![Bke Simulation](https://i.imgur.com/MALW5g2.gif)
