@@ -215,11 +215,9 @@ classdef simulation_exported < matlab.apps.AppBase
         end
         
         function updateChild(app)
-        ye=app.state;
-%         ye(3)=app.phi;ye(4)=app.delta;ye(5)=app.psi;ye(8)=app.xp;ye(9)=app.yp;
-
-        counter=0;
-        idx=0;
+            ye=app.state;   
+            counter=0;
+            idx=0;
             while(1)
                 idx=idx+1;
                 if(app.step<app.duration)
@@ -242,7 +240,12 @@ classdef simulation_exported < matlab.apps.AppBase
                 counter=counter+1;
                 app.state=ye;
                 app.phi=ye(3);app.delta=ye(4);app.psi=ye(5);app.xp=ye(8);app.yp=ye(9);app.Trider=ye(6);
-                if (counter>4)
+                if (app.bike_plot_flag && app.subplot_flag)
+                    frame_skip=8;
+                else
+                    frame_skip=4;
+                end
+                if (counter>frame_skip)
                     counter=0;
                     if(app.bike_plot_flag==true)
                         segments=updateSegments(app,app.t,we/abs(app.magnitude));
@@ -363,6 +366,7 @@ classdef simulation_exported < matlab.apps.AppBase
 
         % Code that executes after component creation
         function constructor(app)
+             %set initial values to member variables
              app.theta=linspace(0,2*pi,60);%rad
              app.v=9.3/3.6;
              app.omegac= 2 * pi * 2.17;
@@ -376,16 +380,30 @@ classdef simulation_exported < matlab.apps.AppBase
              app.t=0;
              app.subplot_flag=false;
              app.bike_plot_flag=true;
+             app.azimuth=60;
+             app.elevation=30;
+             %create subplots
              app.roll.Visible='off';
              app.steer.Visible='off';
              app.torque.Visible='off';
-             app.roll_line=animatedline(app.roll,'Color','b');
-             app.steer_line=animatedline(app.steer,'Color','b');
-             app.torque_line=animatedline(app.torque,'Color','b');
+             app.roll_line=animatedline(app.roll,'Color','b','MaximumNumPoints',100);
+             app.steer_line=animatedline(app.steer,'Color','b','MaximumNumPoints',100);
+             app.torque_line=animatedline(app.torque,'Color','b','MaximumNumPoints',100);
              app.roll.cla;
              app.steer.cla;
              app.torque.cla;
+             %set default values to buttons
+             app.DurationmsEditField.Value = 200;
              app.SignalsSwitch.Value='Off';
+             app.ControllerSwitch.Value = 'On';
+             app.WheelbasecmEditField.Value = 103;
+             app.AzimuthSlider.Value = 60;
+             app.ElevationSlider.Value = 30;
+             app.MagnitudeNEditField.Value = 350;
+             app.SteerAxisTiltdegSlider.Value = 17;
+             app.WheelRadiuscmEditField.Value = 34.29;
+             app.IntegrationTimeStepSpinner.Value = 0.01;
+             % create proper plot labels and grids
              app.steer.XGrid="on";
              app.steer.YGrid="on";
              app.torque.XGrid="on";
@@ -394,7 +412,8 @@ classdef simulation_exported < matlab.apps.AppBase
              app.roll.YGrid="on";
              app.steer.YLabel.String="\delta (deg)";
              app.torque.YLabel.String="T_{\delta} (Nm)";   
-             app.roll.YLabel.String="\phi (deg)";   
+             app.roll.YLabel.String="\phi (deg)"; 
+             % initialize the model
              Y=load('gains_6param_steer.mat');
              app.K=Y.Gains(1,:);
              app.UITable.Data=app.K;
@@ -403,6 +422,7 @@ classdef simulation_exported < matlab.apps.AppBase
              app.state=zeros(9,1);
              segments=updateSegments(app,0,0);
              plotBike(app,segments);
+             %enter update loop function
              updateChild(app);
         end
 
@@ -451,9 +471,9 @@ classdef simulation_exported < matlab.apps.AppBase
                 app.roll.Visible='on';
                 app.steer.Visible='on';
                 app.torque.Visible='on';
-                app.roll_line=animatedline(app.roll,'Color','b');
-                app.steer_line=animatedline(app.steer,'Color','b');
-                app.torque_line=animatedline(app.torque,'Color','b');
+                app.roll_line=animatedline(app.roll,'Color','b','MaximumNumPoints',100);
+                app.steer_line=animatedline(app.steer,'Color','b','MaximumNumPoints',100);
+                app.torque_line=animatedline(app.torque,'Color','b','MaximumNumPoints',100);
             else
                 app.subplot_flag=false;
                 app.roll.cla;
@@ -682,6 +702,7 @@ classdef simulation_exported < matlab.apps.AppBase
             % Create MagnitudeNEditField
             app.MagnitudeNEditField = uieditfield(app.BicycleRiderSimulationUIFigure, 'numeric');
             app.MagnitudeNEditField.ValueChangedFcn = createCallbackFcn(app, @MagnitudeNEditFieldValueChanged, true);
+            app.MagnitudeNEditField.Tooltip = {'Changes the peak of the impulse. In the case of white noise perturbation it determines the variance of the random signal.'};
             app.MagnitudeNEditField.Position = [116 204 41 22];
             app.MagnitudeNEditField.Value = 350;
 
@@ -701,6 +722,7 @@ classdef simulation_exported < matlab.apps.AppBase
             % Create DurationmsEditField
             app.DurationmsEditField = uieditfield(app.BicycleRiderSimulationUIFigure, 'numeric');
             app.DurationmsEditField.ValueChangedFcn = createCallbackFcn(app, @DurationmsEditFieldValueChanged, true);
+            app.DurationmsEditField.Tooltip = {'Duration of the impulse perturbation'};
             app.DurationmsEditField.Position = [116 169 41 22];
             app.DurationmsEditField.Value = 200;
 
@@ -723,6 +745,7 @@ classdef simulation_exported < matlab.apps.AppBase
             app.UITable.ColumnWidth = {'auto'};
             app.UITable.RowName = {};
             app.UITable.ColumnEditable = false;
+            app.UITable.Tooltip = {'The six gains each correcting the error of  the states. '; ' K1'; ' K2'; ' K3'; ' K4'; ' K5'; ' K6 '; 'close the error in '; 'roll rate'; 'steer rate'; 'roll angle'; 'steer angle'; 'yaw angle and applied rider torque respectively.'};
             app.UITable.FontWeight = 'bold';
             app.UITable.FontSize = 10;
             app.UITable.Position = [217 138 452 58];
@@ -744,6 +767,7 @@ classdef simulation_exported < matlab.apps.AppBase
             app.IntegrationTimeStepSpinner = uispinner(app.BicycleRiderSimulationUIFigure);
             app.IntegrationTimeStepSpinner.Step = 0.001;
             app.IntegrationTimeStepSpinner.ValueChangingFcn = createCallbackFcn(app, @IntegrationTimeStepSpinnerValueChanging, true);
+            app.IntegrationTimeStepSpinner.Tooltip = {'Time step of integration ( Runke-Kuta 4)'};
             app.IntegrationTimeStepSpinner.Position = [285 89 100 22];
             app.IntegrationTimeStepSpinner.Value = 0.01;
 
@@ -770,6 +794,7 @@ classdef simulation_exported < matlab.apps.AppBase
             app.SteerAxisTiltdegSlider = uislider(app.BicycleRiderSimulationUIFigure);
             app.SteerAxisTiltdegSlider.Limits = [-30 30];
             app.SteerAxisTiltdegSlider.ValueChangingFcn = createCallbackFcn(app, @SteerAxisTiltdegSliderValueChanging, true);
+            app.SteerAxisTiltdegSlider.Tooltip = {'Angle measured from the vertical z axis to the axis defined by the steering assembly.'};
             app.SteerAxisTiltdegSlider.Position = [276 48 119 3];
             app.SteerAxisTiltdegSlider.Value = 17;
 
@@ -831,6 +856,7 @@ classdef simulation_exported < matlab.apps.AppBase
             % Create WheelbasecmEditField
             app.WheelbasecmEditField = uieditfield(app.BicycleRiderSimulationUIFigure, 'numeric');
             app.WheelbasecmEditField.ValueChangedFcn = createCallbackFcn(app, @WheelbasecmEditFieldValueChanged, true);
+            app.WheelbasecmEditField.Tooltip = {'Distance between the centers of the wheels.'};
             app.WheelbasecmEditField.Position = [536 77 100 22];
             app.WheelbasecmEditField.Value = 103;
 
@@ -843,6 +869,7 @@ classdef simulation_exported < matlab.apps.AppBase
             % Create ControllerSwitch
             app.ControllerSwitch = uiswitch(app.BicycleRiderSimulationUIFigure, 'slider');
             app.ControllerSwitch.ValueChangedFcn = createCallbackFcn(app, @ControllerSwitchValueChanged, true);
+            app.ControllerSwitch.Tooltip = {'Turn control off. Explore the self stability of the bicycle at the 4th speed level.'};
             app.ControllerSwitch.Position = [545 44 22 10];
             app.ControllerSwitch.Value = 'On';
 
